@@ -105,6 +105,13 @@ def validate(text):
 
 
 def main():
+    """Write the winning entry to entry.txt and verify it on disk.
+
+    Writes the entry byte-for-byte (no trailing newline), then reads the
+    file back and compares it byte-for-byte against the entry encoded as
+    UTF-8. Any mismatch raises ValueError, so a corrupt or truncated
+    write can never pass silently.
+    """
     ok, reason = validate(ENTRY)
     if not ok:
         raise ValueError("ENTRY failed validation: %s" % reason)
@@ -112,8 +119,17 @@ def main():
     os.makedirs(out_dir, exist_ok=True)
     path = os.path.join(out_dir, "entry.txt")
     # Written byte-for-byte, no trailing newline: the file is the entry.
+    expected = ENTRY.encode("utf-8")
     with open(path, "wb") as f:
-        f.write(ENTRY.encode("utf-8"))
+        f.write(expected)
+    # Read-back verification: what is on disk must be exactly the entry.
+    with open(path, "rb") as f:
+        on_disk = f.read()
+    if on_disk != expected:
+        raise ValueError(
+            "entry.txt read-back mismatch: wrote %d bytes, read %d bytes"
+            % (len(expected), len(on_disk))
+        )
 
 
 if __name__ == "__main__":
